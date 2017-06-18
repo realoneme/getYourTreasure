@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>multiple</title>
+		<script type="text/javascript" src="modernizr-custom.js"></script>
+		<script type="text/javascript" src="requestAnimationFrame.js"></script>
+		<script type="text/javascript">
+			window.addEventListener("load", eventWindowLoaded, false);
+
+			function eventWindowLoaded() {
+				canvasApp();
+			}
+
+			function canvasSupport() {
+				return Modernizr.canvas;
+			}
+
+			function getRandomNums(min, max) {
+				return Math.floor(Math.random() * max + min);
+			}
+
+			function canvasApp() {
+				if(!(canvasSupport)) {
+					return;
+				} else {
+					theCanvas = document.getElementById("canvasOne");
+					context = theCanvas.getContext("2d");
+				}
+				var canvasWidth = theCanvas.width;
+				var canvasHeight = theCanvas.height;
+
+				var cart = {};
+				cart.x = 0;
+				cart.y = 399;
+				cart.dx = 16;
+				cart.width = 120;
+				cart.height = 101;
+				cart.image = new Image();
+				cart.image.src = "shoppingcart.png";
+
+				context.drawImage(cart.image, 0, 0);
+				cart.cartImageData = context.getImageData(0, 0, cart.width, cart.height);
+
+				//计分
+				var score = 0;
+				var keyPressList = [];
+				context.clearRect(0, 0, theCanvas.width, theCanvas.height);
+
+				function drawScreen() {
+					// 背景
+					context.fillStyle = "#FFF";
+					context.fillRect(0, 0, document.body.offsetWidth, document.body.offsetHeight);
+
+					var flower; //运动物体的起始位置                                                              
+
+					// cart.x += cart.dx;
+
+					context.clearRect(0, 0, theCanvas.width, theCanvas.height);
+
+					//重新画图
+					for(var i = 0; i < flowers.length; i++) {
+						flower = flowers[i];
+						flower.x += flower.xunits;
+						flower.y += flower.yunits;
+						context.drawImage(flower.img, flower.x, flower.y);
+						//console.log(flower.x+"---"+flower.y)
+
+						//	                    
+
+						if(flower.x > canvasWidth || flower.y > canvasHeight) {
+							flower.x = Math.floor(Math.random() * theCanvas.width + 1);
+							flower.y = 0 - Math.floor(Math.random() * 500 + 10);
+						}
+
+						if((flower.x >= cart.x && flower.x <= cart.x + cart.width) && ((flower.y >= cart.y) && (flower.y < cart.y + cart.height))) {
+
+							//在碰撞的时候检测是哪个图片，以及做加减分判断
+							console.log(flower.ind)
+							if(flower.ind === 4) {
+								console.log('减分')
+								score -= 3;
+								//可以在这里进行结束游戏的设置
+							}
+							//如果没有遇上特殊元素，照常加分。
+							score++;
+							flower.x = Math.floor(Math.random() * theCanvas.width + 1);
+							flower.y = 0 - Math.floor(Math.random() * 500 + 10);
+
+						}
+						//在屏幕上显示分数
+						context.fillStyle = "hotpink";
+						context.font = "14px Sans-Serif";
+						context.fillText(score, 125, 30);
+					}
+					context.drawImage(cart.image, cart.x, cart.y);
+					//console.log("移动了");
+					//				if(cart.x<=0){
+					//					cart.dx = 6;
+					//				}else if(cart.x+cart.width==canvasWidth){
+					//					cart.dx = -6;
+					//				}	
+					//按键控制检测	
+					if(keyPressList[39] == true) {
+						//最右边不执行加速度
+						if(cart.x >= canvasWidth - cart.width) {
+							return;
+						}
+						cart.x += cart.dx;
+					} else if(keyPressList[37] == true) {
+						//最左边不执行加速度
+						if(cart.x <= 0) {
+							return;
+						}
+						cart.x -= cart.dx;
+					}
+				}
+
+				var maxSpeed = 12; //最大降落速度
+				var angle = 90; //运动角度
+				//方向（以弧度计算运动角度）
+				var radians = angle * Math.PI / 180;
+
+				// var startNum = 8;
+				const roundNum = 10; //要多少个花瓣
+				var startX;
+				var startY;
+				var flowers = new Array();
+				var tempSpeed;
+				var tempFlower;
+
+				var arrImg = ["huaban0.png", "huaban1.png", "huaban2.png", "huaban3.png", "huaban4.png"];
+				for(var i = 0; i < roundNum; i++) {
+					//有不同的横轴降落起始点
+					startX = Math.floor(Math.random() * theCanvas.width + 1);
+					//有不同的纵轴降落起始点(负数，浏览器原点上方开始降落)
+					startY = 0 - Math.floor(Math.random() * 100);
+					tempSpeed = Math.floor(Math.random() * maxSpeed + 2); //有不同的降落速度随机出来(2-maxSpeed)
+
+					var img = new Image();
+					//取到每次取得array里图片的序号
+					var ranNum = getRandomNums(0, 5)
+					img.src = arrImg[ranNum];
+					//console.log(img.src);
+					tempFlower = {
+						x: startX,
+						y: startY,
+						xunits: Math.cos(radians) * tempSpeed, //每次对象移动的像素数值
+						yunits: Math.sin(radians) * tempSpeed, //每次对象移动的像素数值
+						img: img,
+						//把每次取得的序号储存起来，以便在之后找到扣分或者多分对象
+						ind: ranNum
+					}
+					flowers.push(tempFlower);
+				}
+
+				function gameLoop() {
+					window.requestAnimationFrame(arguments.callee);
+					drawScreen();
+				}
+				gameLoop();
+				//键盘事件
+				document.onkeydown = function(e) {
+					e = e ? e : window.event;
+					keyPressList[e.keyCode] = true;
+				}
+				document.onkeyup = function(e) {
+					e = e ? e : window.event;
+					keyPressList[e.keyCode] = false;
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<canvas id="canvasOne" width="650" height="600"></canvas>
+	</body>
+</html>
